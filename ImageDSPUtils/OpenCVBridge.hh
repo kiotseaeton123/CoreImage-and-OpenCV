@@ -16,6 +16,10 @@
 
 @property (nonatomic) NSInteger processType;
 
+@property NSInteger arrayID;
+@property (strong, nonatomic) NSMutableArray* redArr;
+@property (strong, nonatomic) NSMutableArray* greenArr;
+@property (strong, nonatomic) NSMutableArray* blueArr;
 
 // set the image for processing later
 -(void) setImage:(CIImage*)ciFrameImage
@@ -28,8 +32,12 @@
 //get the image inside the original bounds
 -(CIImage*)getImageComposite;
 
+-(bool)processFinger;
 // call this to perfrom processing (user controlled for better transparency)
 -(void)processImage;
+-(void)processEyeImage;
+-(void)processMouthImage;
+-(void)processHeadImage;
 
 // for the video manager transformations
 -(void)setTransforms:(CGAffineTransform)trans;

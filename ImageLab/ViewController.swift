@@ -18,6 +18,9 @@ class ViewController: UIViewController   {
     var detector:CIDetector! = nil
     let bridge = OpenCVBridge()
     
+    // used to stabilize the the torch so that it waits 50 frames to turn off the flash to avoid blinking
+//    var framesCount:Int = 50
+    
     //MARK: Outlets in view
     @IBOutlet weak var flashSlider: UISlider!
     @IBOutlet weak var stageLabel: UILabel!
@@ -43,6 +46,7 @@ class ViewController: UIViewController   {
                                   context: self.videoManager.getCIContext(), // perform on the GPU is possible
             options: (optsDetector as [String : AnyObject]))
         
+        
         self.videoManager.setProcessingBlock(newProcessBlock: self.processImageSwift)
         
         if !videoManager.isRunning{
@@ -55,49 +59,77 @@ class ViewController: UIViewController   {
     func processImageSwift(inputImage:CIImage) -> CIImage{
         
         // detect faces
-        let f = getFaces(img: inputImage)
-        
+        let faces = getFaces(img: inputImage)
         // if no faces, just return original image
-        if f.count == 0 { return inputImage }
-        
+        if faces.count == 0 { return inputImage }
+
         var retImage = inputImage
-        
-        //-------------------Example 1----------------------------------
-        // if you just want to process on separate queue use this code
-        // this is a NON BLOCKING CALL, but any changes to the image in OpenCV cannot be displayed real time
-        /*
-        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0)) { () -> Void in
-            self.bridge.setImage(retImage, withBounds: retImage.extent, andContext: self.videoManager.getCIContext())
+
+        for face in faces {
+
+            var leftEyeX = face.leftEyePosition.x
+            var leftEyeY = face.leftEyePosition.y
+            var rightEyeX = face.rightEyePosition.x
+            var rightEyeY = face.rightEyePosition.y
+            
+            var mouth = face.mouthPosition
+            
+            var faceWidth = face.bounds.width
+            var faceHeight = face.bounds.height
+            
+            //CGRect bounds for eye and mouth
+            var leftEyeBounds = CGRect(x:leftEyeX-faceWidth/4,y:leftEyeY-faceHeight/4,width:faceWidth/3,height:faceHeight/3)
+            
+            var rightEyeBounds = CGRect(x:leftEyeX-faceWidth/4,y:leftEyeY-faceHeight/4,width:faceWidth/3,height:faceHeight/3)
+            
+            var mouthBounds = CGRect(x:mouth.x-faceWidth/3,y:mouth.y-faceHeight/4,width:faceWidth/2,height:faceHeight/5)
+                
+            self.bridge.setTransforms(self.videoManager.transform)
+                        
+            
+            self.bridge.setImage(retImage,
+                                 withBounds: face.bounds,
+                                 andContext: self.videoManager.getCIContext())
             self.bridge.processImage()
+            retImage = self.bridge.getImageComposite()
+            
+            //process mouth
+            self.bridge.setImage(retImage,
+                                 withBounds: mouthBounds,
+                                 andContext: self.videoManager.getCIContext())
+            self.bridge.processMouthImage()
+            retImage = self.bridge.getImageComposite()
+            
+            //process leftEye
+            self.bridge.setImage(retImage,
+                                 withBounds: leftEyeBounds,
+                                 andContext: self.videoManager.getCIContext())
+            self.bridge.processEyeImage()
+            retImage = self.bridge.getImageComposite()
+            
+            //process rightEye
+            self.bridge.setImage(retImage,
+                                 withBounds: leftEyeBounds,
+                                 andContext: self.videoManager.getCIContext())
+
+            self.bridge.processEyeImage()
+            retImage = self.bridge.getImageComposite()
+            
+
+            //display head if smiling
+            if(face.hasSmile){
+                self.bridge.setImage(retImage,
+                                     withBounds: face.bounds,
+                                     andContext: self.videoManager.getCIContext())
+                self.bridge.processHeadImage()
+                retImage = self.bridge.getImageComposite()
+            }
         }
-         */
-        
-        //-------------------Example 2----------------------------------
-        // use this code if you are using OpenCV and want to overwrite the displayed image via OpenCV
-        // this is a BLOCKING CALL
-        /*
-        self.bridge.setTransforms(self.videoManager.transform)
-        self.bridge.setImage(retImage, withBounds: retImage.extent, andContext: self.videoManager.getCIContext())
-        self.bridge.processImage()
-        retImage = self.bridge.getImage()
-         */
-        
-        //-------------------Example 3----------------------------------
-        //You can also send in the bounds of the face to ONLY process the face in OpenCV
-        // or any bounds to only process a certain bounding region in OpenCV
-        self.bridge.setTransforms(self.videoManager.transform)
-        self.bridge.setImage(retImage,
-                             withBounds: f[0].bounds, // the first face bounds
-                             andContext: self.videoManager.getCIContext())
-        
-        self.bridge.processImage()
-        retImage = self.bridge.getImageComposite() // get back opencv processed part of the image (overlayed on original)
         
         return retImage
     }
     
-    //MARK: Setup Face Detection
-    
+    //-----------FACE DETECTION
     func getFaces(img:CIImage) -> [CIFaceFeature]{
         // this ungodly mess makes sure the image is the correct orientation
         let optsFace = [CIDetectorImageOrientation:self.videoManager.ciOrientation]
