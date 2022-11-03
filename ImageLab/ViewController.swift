@@ -82,7 +82,7 @@ class ViewController: UIViewController   {
             
             var rightEyeBounds = CGRect(x:leftEyeX-faceWidth/4,y:leftEyeY-faceHeight/4,width:faceWidth/3,height:faceHeight/3)
             
-            var mouthBounds = CGRect(x:mouth.x-faceWidth/3,y:mouth.y-faceHeight/4,width:faceWidth/2,height:faceHeight/5)
+            var mouthBounds = CGRect(x:mouth.x-faceWidth/9,y:mouth.y-faceHeight/4,width:faceWidth/5,height:faceHeight/2)
                 
             self.bridge.setTransforms(self.videoManager.transform)
                         
