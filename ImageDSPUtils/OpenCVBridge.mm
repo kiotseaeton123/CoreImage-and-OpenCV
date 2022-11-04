@@ -5,6 +5,7 @@
 //  Created by Eric Larson.
 //  Copyright (c) Eric Larson. All rights reserved.
 //
+//
 
 #import "OpenCVBridge.hh"
 
@@ -28,39 +29,41 @@ using namespace cv;
 
 #pragma mark ===Write Your Code Here===
 
--(void)initArrays{
+-(void)initArrays{//initialize array buffers
     self.redArr = [NSMutableArray arrayWithCapacity:100];
     self.greenArr = [NSMutableArray arrayWithCapacity:100];
     self.blueArr = [NSMutableArray arrayWithCapacity:100];
 }
-
+// basic variables for bpm calculation and
 float total = 0.0;
 float average = 0.0;
 float numBeats = 0;
 float frameCount = 0.0;//framecount that won't reset
 float numFramesPerSample = 0;
 
+char text[50];
+char framesText[50];
+char beatText[50];
+int numFrames = 30;
+
 -(bool)processFinger{ //2.1
-    //take avverage
-    char text[50];
-    char framesText[50];
-    char beatText[50];
-    int numFrames = 30;
+
     Scalar avgPixelIntensity;
     cv::Mat frame_gray,image_copy;
-    
-    
-    
+
     cvtColor(_image, image_copy, CV_BGRA2BGR); // get rid of alpha for processing
     avgPixelIntensity = cv::mean( image_copy );
+    //show rbg values
     sprintf(text,"Avg. B: %.0f, G: %.0f, R: %.0f", avgPixelIntensity.val[2],avgPixelIntensity.val[1],avgPixelIntensity.val[0]);
     cv::putText(_image, text, cv::Point(0, 100), FONT_HERSHEY_PLAIN, 0.75, Scalar::all(255), 1, 2);
  
+    //show and calculate bpm
     sprintf(beatText, "BPM %.0f", (numBeats/4/frameCount)*1800 );
     cv::putText(_image, beatText, cv::Point(0,130), FONT_HERSHEY_PLAIN, 0.75, Scalar::all(255), 1, 2);
     
-    if ((avgPixelIntensity.val[2]<40 && avgPixelIntensity.val[1]<40) || (avgPixelIntensity.val[0]>200 && avgPixelIntensity.val[2]<50)) { //then read data into buffer, then return true
-        frameCount = frameCount +1 ;//increment framecount
+    //increment framecount and read data in buffer
+    if ((avgPixelIntensity.val[2]<40 && avgPixelIntensity.val[1]<40) || (avgPixelIntensity.val[0]>200 && avgPixelIntensity.val[2]<50)) {
+        frameCount = frameCount +1 ;
         
         if (self.arrayID < numFrames){ //when array full
             
@@ -97,7 +100,7 @@ float numFramesPerSample = 0;
     }
 }
 
-
+//add borders around head if person is smiling
 -(void)processHeadImage{
     cv::Mat frame_gray,image_copy;
 
@@ -107,6 +110,7 @@ float numFramesPerSample = 0;
     cvtColor(image_copy, _image, CV_BGR2BGRA);
 }
 
+//identify eyes in blurred box
 -(void)processEyeImage{
     cv::Mat frame_gray,image_copy;
 
@@ -117,6 +121,7 @@ float numFramesPerSample = 0;
   
 }
 
+//identify mouth in blurred box
 -(void)processMouthImage{
     cv::Mat frame_gray,image_copy;
 
@@ -127,6 +132,7 @@ float numFramesPerSample = 0;
 }
 
 #pragma mark Define Custom Functions Here
+//identify multiple faces
 -(void)processImage{
     
     cv::Mat frame_gray,image_copy;

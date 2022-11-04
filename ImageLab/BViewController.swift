@@ -5,7 +5,9 @@
 //
 //  Created by Eric Larson
 //  Copyright © Eric Larson. All rights reserved.
-//
+
+
+//Module B: record heartbeat if data point is below the average red value
 
 import UIKit
 import AVFoundation
@@ -54,10 +56,11 @@ class BViewController: UIViewController   {
     func processImageSwift(inputImage:CIImage) -> CIImage{
         var retImage = inputImage
         
+        //increment framecount
         self.bridge.setTransforms(self.videoManager.transform)
         self.bridge.setImage(retImage, withBounds: retImage.extent, andContext: self.videoManager.getCIContext())
         if framesCount < 50 {
-            framesCount += 1 //inc every frame
+            framesCount += 1
         }
         
         if self.bridge.processFinger() {
@@ -75,7 +78,4 @@ class BViewController: UIViewController   {
   
         return retImage
     }
-    
-
-   
 }

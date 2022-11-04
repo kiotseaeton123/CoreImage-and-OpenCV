@@ -11,28 +11,20 @@ import AVFoundation
 
 class ViewController: UIViewController   {
 
-    //MARK: Class Properties
+    //class properties
     var filters : [CIFilter]! = nil
     var videoManager:VideoAnalgesic! = nil
     let pinchFilterIndex = 2
     var detector:CIDetector! = nil
     let bridge = OpenCVBridge()
     
-    // used to stabilize the the torch so that it waits 50 frames to turn off the flash to avoid blinking
-//    var framesCount:Int = 50
-    
-    //MARK: Outlets in view
     @IBOutlet weak var flashSlider: UISlider!
     @IBOutlet weak var stageLabel: UILabel!
     
-    //MARK: ViewController Hierarchy
     override func viewDidLoad() {
         super.viewDidLoad()
         
         self.view.backgroundColor = nil
-        
-        // setup the OpenCV bridge nose detector, from file
-        self.bridge.loadHaarCascade(withFilename: "nose")
         
         self.videoManager = VideoAnalgesic(mainView: self.view)
         self.videoManager.setCameraPosition(position: AVCaptureDevice.Position.front)
@@ -55,7 +47,6 @@ class ViewController: UIViewController   {
     
     }
     
-    //MARK: Process image output
     func processImageSwift(inputImage:CIImage) -> CIImage{
         
         // detect faces
